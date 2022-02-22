@@ -1,0 +1,17 @@
+1. Discern project nature and structure.
+2. Build out MySQL Model Schema and ERD.
+3. Forward Engineer DB, save .sql file into the new project directory.
+4. Copy the project_template folder to new project location.
+5. Rename the copied project_template folder and all the principle files within.
+6. Install flask, PyMySQL, and flask-bcrypt through pipenv.
+7. Start renaming pre-configured file components and restructuring the controler and model files as necesary.
+8. Create/rework any complex MySQL queries.
+9. Create validations for any project forms.
+10. Build out basic structure for web pages.
+11. Start pipenv shell and run the server.
+12. Resolve any initial errors.
+13. Begin testing functionality.
+14. Double check project requirements, notate code for clarity.
+15. Confirm any session elements are cleared in code.
+15. Clean up HTML/CSS.
+16. Zip folder and submit.

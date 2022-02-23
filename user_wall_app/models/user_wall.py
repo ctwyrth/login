@@ -1,8 +1,8 @@
-from login_app.config.mysqlconnection import connectToMySQL
+from user_wall_app.config.mysqlconnection import connectToMySQL
 from flask import flash
 import re
 
-DB = 'login'
+DB = 'user_wall'
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 PASSWORD_REGEX = re.compile(r'^(?=.*\d)(?=.*[a-zA-Z])(?=.*[!#\$%&\?]).{8,24}$')  # password info pop up or explanation: Must be 8-24 characters long and contain: -1 upper case letter, -1 lower case letter, -1 number, -2 special characters (?!@$%&*-_)
 FIRSTNAME_REGEX = re.compile(r'^[A-Za-z]+(((\'|\-|\ )?([A-Za-z])+))?$')
@@ -15,15 +15,14 @@ class User:
         self.first_name = data['first_name']
         self.last_name = data['last_name']
         self.email = data['email']
-        self.dob = data['dob']
         self.username = data['username']
         self.password = data['password']
         self.created_at = data['created_at']
         self.updated_at = data['updated_at']
 
     @classmethod
-    def save(cls, data):
-        query = "INSERT INTO users (first_name, last_name, email, dob, username, password) VALUES (%(fname)s, %(lname)s, %(email)s, %(dob)s, %(username)s, %(password)s);"
+    def save(cls,data):
+        query = "INSERT INTO users (first_name, last_name, email, username, password) VALUES (%(fname)s, %(lname)s, %(email)s, %(username)s, %(password)s);"
         return connectToMySQL(DB).query_db(query,data)
 
     @classmethod
@@ -88,10 +87,6 @@ class User:
             is_valid = False
         else:
             print('email is unique')
-        if not DATE_REGEX.match(user['dob']):
-            flash('The date you entered does not appear to be valid.', 'warning')
-            is_valid = False
-            print('the date is not valid')
         if len(user['username']) < 5:
             flash('Your username needs to be at least 5 characters long.', 'warning')
             is_valid = False
@@ -118,6 +113,51 @@ class User:
             if email == user.email:
                 isUnique = False
         return isUnique
+
+class Message:
+    def __init__(self,data):
+        self.id = data['id']
+        self.sender_id = data['sender_id']
+        self.recipient_id = data['recipient_id']
+        self.message = data['message']
+        self.isNew = data['isNew']
+        self.created_at = data['created_at']
+        self.updated_at = data['updated_at']
+
+    @classmethod
+    def get_new(cls,id):
+        data = {
+            'id': id
+        }
+        query = "SELECT messages.id, messages.sender_id, message, messages.created_at, users.username AS author FROM messages LEFT JOIN users ON messages.sender_id = users.id WHERE recipient_id = %(id)s AND isNew = 1;"
+        return connectToMySQL(DB).query_db(query,data)
+
+    @classmethod
+    def get_old(cls,data):
+        query = "SELECT * FROM messages LEFT JOIN users ON %(id)s = messages.recipient_id WHERE messages.isNew = 0;"
+        return connectToMySQL(DB).query_db(query,data)
+
+    @classmethod
+    def read(cls,data):
+        message_id = {
+            'id': data
+        }
+        query = "UPDATE messages SET isNew=0 WHERE messages.id = %(id)s;"
+        return connectToMySQL(DB).query_db(query,message_id)
+
+    @classmethod
+    def delete_message(cls,data):
+        message_id = {
+            'id': data
+        }
+        query = "DELETE FROM messages WHERE messages.id = %(id)s;"
+        return connectToMySQL(DB).query_db(query,message_id)
+
+    @classmethod
+    def create_message(cls,data):
+        query = "INSERT INTO messages (sender_id, recipient_id, message, isNew) VALUES (%(sender_id)s, %(recipient_id)s, %(message)s, %(isNew)s);"
+        return connectToMySQL(DB).query_db(query,data)
+
 
 # bcrypt.generate_password_hash(password_string) <--- create hash
 # bcrypt.check_password_hash(hashed_password, password_string) <--- compare hash to pwd

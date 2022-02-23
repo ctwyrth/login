@@ -1,6 +1,6 @@
-from login_app import app
+from user_wall_app import app
 from flask import render_template, redirect, request, session
-from login_app.models.login import User
+from user_wall_app.models.user_wall import User, Message
 from flask_bcrypt import Bcrypt
 from flask import flash
 
@@ -9,9 +9,7 @@ bcrypt = Bcrypt(app)
 @app.route('/')
 def index():
     if session:
-        print(session)
         for key in session:
-            print(key)
             if key == 'isLoggedIn':
                 if session['isLoggedIn'] == True:
                     return redirect('/welcome')
@@ -22,7 +20,7 @@ def index():
                 continue
         return render_template('login.html')
     else:
-        return render_template('login.html')
+        return render_template('login.html')  # this return may be extraneous but the process was erroring out otherwise.
 
 @app.route('/register/user', methods=['POST'])
 def register():
@@ -34,7 +32,6 @@ def register():
         'fname': request.form['fname'],
         'lname': request.form['lname'],
         'email': request.form['email'],
-        'dob': request.form['dob'],
         'username': request.form['username'],
         'password': pw_hash
     }
@@ -69,7 +66,35 @@ def check_login():
 
 @app.route('/welcome')
 def welcome():
-    return render_template('/welcome.html')
+    messages = Message.get_new(session['user_id'])
+    if not messages:
+        messages = {}
+        messages_total = 0
+    else:
+        messages_total = len(messages)
+    users = User.show_all()
+    return render_template('/welcome.html', new_messages = messages, messages_total = messages_total, users = users)
+
+@app.route('/send_mess', methods=['POST'])
+def send_message():
+    new_mess = {
+        'sender_id': session['user_id'],
+        'recipient_id': request.form['recipient_id'],
+        'message': request.form['message'],
+        'isNew': 1
+    }
+    Message.create_message(new_mess)
+    return redirect('/welcome')
+
+@app.route('/delete_mess/<id>')
+def delete_message(id):
+    Message.delete_message(id)
+    return redirect('/welcome')
+
+@app.route('/mark_read/<id>')
+def mark_read(id):
+    Message.read(id)
+    return redirect('/')
 
 @app.route('/show/<int:id>')
 def show_record(id):
